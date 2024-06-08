@@ -2,5 +2,11 @@ import sqlite3 as sql
 import pandas as pd
 datos=sql.connect('db_personas.db')
 
-df=pd.read_sql(sql='SELECT p.fecha_ingreso, p.residencia, p.rut, p.nombre_completo,p.nacionalidad, p.fecha_de_nacimiento, p.profesion, s.Sueldo FROM personas AS p INNER JOIN Salarios AS s p.id_rol = s.id_salarios', con=datos)
-print(df.head())
+Consulta="""
+SELECT P.fecha_ingreso, S.Rol, P.residencia,P.rut,P.nombre_completo,P.nacionalidad,P.fecha_de_nacimiento,P.profesion,S.sueldo 
+FROM personas AS P 
+INNER JOIN Salarios AS S ON P.id_rol = S.id_salarios
+"""
+df=pd.read_sql(Consulta,con=datos)
+
+print(df)
