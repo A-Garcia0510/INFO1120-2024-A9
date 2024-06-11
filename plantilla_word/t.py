@@ -1,9 +1,9 @@
 import pandas as pd
 import sqlite3
 from docx import Document
-from docx.shared import  Pt,Cm,Mm
+from docx.shared import Pt, Cm, Mm
 
-def example_contract(date:str, rol:str, address:str, rut:str, full_name:str, nationality:str, birth_date:str, profession:str, salary:str)->str:
+def example_contract(date: str, rol: str, address: str, rut: str, full_name: str, nationality: str, birth_date: str, profession: str, salary: str) -> None:
     document = Document()
     ###########################################
     ########   DOCUMENT PARAMETERS    #########
@@ -41,24 +41,24 @@ def example_contract(date:str, rol:str, address:str, rut:str, full_name:str, nat
     p1.add_run('PRIMERO        :').bold = True
     p1.add_run('En el marco del acuerdo de servicios profesionales fechado el 11 de noviembre de 2020, establecido entre la Agencia Nacional de Estándares Educativos y la Corporación de Innovación y Desarrollo Tecnológico , y ratificado según la Resolución Exenta N°603 del 23 de noviembre de 2020, la Corporación encarga los servicios profesionales del Prestador de Servicios, para que ejecute la siguiente tarea en el proyecto "Evaluación de competencias específicas y metodologías de aprendizaje artificial 2020, ID 67703-20-JJ90."')
     p1.add_run('\n SEGUNDO        :').bold = True
-    p1.add_run('El rol a desempeñar es de '+rol+'.')
+    p1.add_run('El rol a desempeñar es de ' + rol + '.')
     p1.add_run('\n TERCERO        :').bold = True
-    p1.add_run('El plazo para la realización de la prestación de servicios encomendada será el '+str(date))
+    p1.add_run('El plazo para la realización de la prestación de servicios encomendada será el ' + str(date))
     p1.add_run('\n CUARTO        :').bold = True
-    p1.add_run('Por el servicio profesional efectivamente realizado, se pagara un monto bruto variable, el cual corresponderá a cada rol dentro de la empresa capacitación, de acuerdo al siguiente detalle: ')
+    p1.add_run('Por el servicio profesional efectivamente realizado, se pagará un monto bruto variable, el cual corresponderá a cada rol dentro de la empresa capacitación, de acuerdo al siguiente detalle: ')
     table = document.add_table(rows=2, cols=2)
     table.alignment = 1
     hdr_cells0 = table.rows[0].cells
-    hdr_cells0[0].text='Rol'
-    hdr_cells0[1].text='Monto Bruto'
+    hdr_cells0[0].text = 'Rol'
+    hdr_cells0[1].text = 'Monto Bruto'
     hdr_cells = table.rows[1].cells
     hdr_cells[0].text = rol
-    hdr_cells[1].text= salary
+    hdr_cells[1].text = salary
     p1.add_run('\n QUINTO        :').bold = True
     p1.add_run('El Prestador de Servicios acepta el encargo y las condiciones precedentes.')
     p1.add_run('\n SEXTO        :').bold = True
     p1.add_run(
-    'El Prestador de Servicios está obligado a mantener la confidencialidad de todos los materiales utilizados, conforme al Acuerdo de Confidencialidad previamente establecido.')
+        'El Prestador de Servicios está obligado a mantener la confidencialidad de todos los materiales utilizados, conforme al Acuerdo de Confidencialidad previamente establecido.')
     p1.add_run('\n En comprobante, previa lectura y ratificación, las partes firman.  ').bold = True
     table = document.add_table(rows=2, cols=2)
     table.alignment = 1
@@ -74,50 +74,37 @@ def example_contract(date:str, rol:str, address:str, rut:str, full_name:str, nat
     run.add_picture("imagenes/footer1.png")
     document.save(f'{full_name}.docx')
 
-def singular_data_to_contract(df: pd.DataFrame, index_row:int, document: example_contract):
-    sub_df = df.iloc[index_row]
-    date = sub_df['fecha_ingreso']
-    rol = sub_df['Rol']
-    address = sub_df['residencia']
-    rut = sub_df['rut']
-    full_name = sub_df['nombre_completo']
-    nationality = sub_df['nacionalidad']
-    birth_date = sub_df['fecha_de_nacimiento']
-    profession = sub_df['profesion']
-    salary = sub_df['Sueldo']
-
-# Conectar a la base de datos SQLite
 conn = sqlite3.connect('Sql_data/db_personas.db')
 
-# Definir la consulta SQL
-query = """
-SELECT p.fecha_ingreso, s.Rol, p.residencia, p.rut, p.nombre_completo, p.nacionalidad, p.fecha_de_nacimiento, p.profesion, s.Sueldo
-FROM personas AS p
-INNER JOIN Salarios AS s ON p.id_rol = s.id_salarios
-"""
+while True:
+    specific_rut = input("Ingrese el RUT del usuario para generar el contrato (o 'salir' para terminar): ")
+    
+    if specific_rut.lower() == 'salir':
+        break
 
-# Leer datos de la base de datos en un DataFrame
-df = pd.read_sql_query(query, conn)
+    query = """
+    SELECT p.fecha_ingreso, s.Rol, p.residencia, p.rut, p.nombre_completo, p.nacionalidad, p.fecha_de_nacimiento, p.profesion, s.Sueldo
+    FROM personas AS p
+    INNER JOIN Salarios AS s ON p.id_rol = s.id_salarios
+    WHERE p.rut = ?
+    """
 
-# Generar un documento de Word para cada fila en el DataFrame
-for index_row in range(len(df)):
-    date = df.at[index_row, 'fecha_ingreso']
-    rol = df.at[index_row, 'Rol']
-    address = df.at[index_row, 'residencia']
-    rut = df.at[index_row, 'rut']
-    full_name = df.at[index_row, 'nombre_completo']
-    nationality = df.at[index_row, 'nacionalidad']
-    birth_date = df.at[index_row, 'fecha_de_nacimiento']
-    profession = df.at[index_row, 'profesion']
-    salary = str(df.at[index_row, 'Sueldo'])  # Convertir el salario a una cadena
+    df = pd.read_sql_query(query, conn, params=(specific_rut,))
 
-    # Generar el contrato para esta fila
-    example_contract(date, rol, address, rut, full_name, nationality, birth_date, profession, salary)
+    if not df.empty:
+        row = df.iloc[0]
+        date = row['fecha_ingreso']
+        rol = row['Rol']
+        address = row['residencia']
+        rut = row['rut']
+        full_name = row['nombre_completo']
+        nationality = row['nacionalidad']
+        birth_date = row['fecha_de_nacimiento']
+        profession = row['profesion']
+        salary = str(row['Sueldo'])
 
-
-
-
-
-
-
+        example_contract(date, rol, address, rut, full_name, nationality, birth_date, profession, salary)
+        print(f"Contrato generado exitosamente para {full_name}.")
+    else:
+        print(f"No se encontraron datos para el RUT {specific_rut}.")
 
